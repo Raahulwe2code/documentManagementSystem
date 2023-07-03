@@ -7,9 +7,7 @@ const __dirname = path.dirname(__filename);
 import { StatusCodes } from "http-status-codes";
 
 import nodemailer from "nodemailer";
-import { connected } from "process";
 
-import archiver from "archiver";
 var rendomNumber = Math.floor(100000 + Math.random() * 900000);
 
 export function client_documents_upload(req, res) {
@@ -72,7 +70,7 @@ export function client_documents_upload(req, res) {
       document_type +
       '","' +
       document_title +
-      '","http://localhost:8888/document_upload/' +
+      '","http://192.168.29.226:8888/document_upload/' +
       client_id +
       "-" +
       client_name +
