@@ -31,7 +31,7 @@ console.log();
 // });
 
 const connection = mysql.createConnection({
-  host: "daigle.iad1-mysql-e2-4b.dreamhost.com",
+  host: "mysql.indiakinursery.com",
   user: "indiakinursery",
   password: "WE2code@2023",
   database: "documentdb",
