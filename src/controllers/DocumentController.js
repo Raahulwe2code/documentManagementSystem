@@ -60,7 +60,7 @@ export function client_documents_upload(req, res) {
   } catch (err) {
     console.log(err);
   }
-
+  // req.protocol + "://" + req.headers.host + "/user_profile/" + req.file.filename;
   connection.query(
     "INSERT INTO `documents`( `admin_id`, `client_id`,`document_type`, `document_title`, `document_url`) VALUES (" +
       admin_id +
@@ -70,7 +70,7 @@ export function client_documents_upload(req, res) {
       document_type +
       '","' +
       document_title +
-      '","http://192.168.29.226:8888/document_upload/' +
+      '","http://indiakinursery.com:8888/document_upload/' +
       client_id +
       "-" +
       client_name +
