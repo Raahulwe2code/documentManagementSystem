@@ -95,22 +95,35 @@ export function client_documents_upload(req, res) {
 }
 
 export function get_documents(req, res) {
-  var { client_id } = req.body;
-
-  connection.query(
-    "SELECT * FROM documents WHERE `client_id`='" +
-      client_id +
-      " '   AND is_deleted='0' ",
-    (err, rows, fields) => {
-      if (err) {
-        //console.log(err)
-        res.status(200).send(err);
-      } else {
-        //console.log("rows")
-        res.status(200).send(rows);
-      }
+  const page = parseInt(req.query.page) || 1; // Current page number
+  const limit = parseInt(req.query.limit) || 10; // Number of items per page
+  const offset = (page - 1) * limit;
+  const query = `SELECT * FROM documents LIMIT ${limit} OFFSET ${offset}`;
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error("Error executing the query: " + err.stack);
+      return res.status(500).json({ error: "Internal Server Error" });
     }
-  );
+    const countQuery = "SELECT COUNT(*) as total_count FROM documents";
+    connection.query(countQuery, (err, countResult) => {
+      if (err) {
+        console.error("Error executing the count query: " + err.stack);
+        return res.status(500).json({ error: "Internal Server Error" });
+      }
+      const totalRecords = countResult[0].total_count;
+      const totalPages = Math.ceil(totalRecords / limit);
+      const nextPage = page < totalPages ? page + 1 : null;
+      const prevPage = page > 1 ? page - 1 : null;
+      res.json({
+        data: results,
+        page,
+        totalPages,
+        totalRecords,
+        nextPage,
+        prevPage,
+      });
+    });
+  });
 }
 
 export function get_documents_By_Id(req, res) {
@@ -393,7 +406,6 @@ export async function search_document(req, res) {
       "SELECT * FROM `documents` WHERE client_id='" + client_id + "' AND ";
   }
   console.log("" + stringsearch + " is_deleted = 0 ORDER BY id DESC");
-
   connection.query(
     "" + stringsearch + " is_deleted = 0 ORDER BY id DESC",
     (err, rows, fields) => {
