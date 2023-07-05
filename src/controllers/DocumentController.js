@@ -60,7 +60,7 @@ export function client_documents_upload(req, res) {
   } catch (err) {
     console.log(err);
   }
-
+  // req.protocol + "://" + req.headers.host + "/user_profile/" + req.file.filename;
   connection.query(
     "INSERT INTO `documents`( `admin_id`, `client_id`,`document_type`, `document_title`, `document_url`) VALUES (" +
       admin_id +
@@ -70,7 +70,11 @@ export function client_documents_upload(req, res) {
       document_type +
       '","' +
       document_title +
-      '","http://192.168.29.226:8888/document_upload/' +
+      '","' +
+      req.protocol +
+      "://" +
+      req.headers.host +
+      "/document_upload/" +
       client_id +
       "-" +
       client_name +
@@ -91,22 +95,35 @@ export function client_documents_upload(req, res) {
 }
 
 export function get_documents(req, res) {
-  var { client_id } = req.body;
-
-  connection.query(
-    "SELECT * FROM documents WHERE `client_id`='" +
-      client_id +
-      " '   AND is_deleted='0' ",
-    (err, rows, fields) => {
-      if (err) {
-        //console.log(err)
-        res.status(200).send(err);
-      } else {
-        //console.log("rows")
-        res.status(200).send(rows);
-      }
+  const page = parseInt(req.query.page) || 1; // Current page number
+  const limit = parseInt(req.query.limit) || 10; // Number of items per page
+  const offset = (page - 1) * limit;
+  const query = `SELECT * FROM documents LIMIT ${limit} OFFSET ${offset}`;
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error("Error executing the query: " + err.stack);
+      return res.status(500).json({ error: "Internal Server Error" });
     }
-  );
+    const countQuery = "SELECT COUNT(*) as total_count FROM documents";
+    connection.query(countQuery, (err, countResult) => {
+      if (err) {
+        console.error("Error executing the count query: " + err.stack);
+        return res.status(500).json({ error: "Internal Server Error" });
+      }
+      const totalRecords = countResult[0].total_count;
+      const totalPages = Math.ceil(totalRecords / limit);
+      const nextPage = page < totalPages ? page + 1 : null;
+      const prevPage = page > 1 ? page - 1 : null;
+      res.json({
+        data: results,
+        page,
+        totalPages,
+        totalRecords,
+        nextPage,
+        prevPage,
+      });
+    });
+  });
 }
 
 export function get_documents_By_Id(req, res) {
@@ -235,14 +252,23 @@ export async function testingmailer(req, res) {
 
             var clientName = mailResponse[0].name;
 
-            let text =
-              "/home/we2code/Desktop/DMS/dmsBackend/public/document_upload_zipfiles/";
-            let result = text.replace(
-              "/home/we2code/Desktop/DMS/dmsBackend/public",
-              "http://localhost:8888"
-            );
+            // let text =
+            //   "/home/we2code/Desktop/DMS/dmsBackend/public/document_upload_zipfiles/";
+            // let result = text.replace(
+            //   "/home/we2code/Desktop/DMS/dmsBackend/public",
+            //   "" + req.protocol + "://" + req.headers.host + ""
+            // );
+            let result =
+              "" +
+              req.protocol +
+              "://" +
+              req.headers.host +
+              "/document_upload_zipfiles/";
+            console.log("---------path check resulrt------------");
+            console.log(result);
 
             //           // console.log(result);
+            // return false;
             let mailTransporter = nodemailer.createTransport({
               service: "gmail",
               auth: {
@@ -380,7 +406,6 @@ export async function search_document(req, res) {
       "SELECT * FROM `documents` WHERE client_id='" + client_id + "' AND ";
   }
   console.log("" + stringsearch + " is_deleted = 0 ORDER BY id DESC");
-
   connection.query(
     "" + stringsearch + " is_deleted = 0 ORDER BY id DESC",
     (err, rows, fields) => {

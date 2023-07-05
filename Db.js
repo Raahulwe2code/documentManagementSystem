@@ -16,13 +16,6 @@ import "dotenv/config";
 // Username: indiakinursery
 // pwd: WE2code@2023
 console.log();
-var connection = mysql.createConnection({
-  host: "mysql.indiakinursery.com",
-  user: "indiakinursery",
-  password: "WE2code@2023",
-  database: "documentdb",
-});
-
 // const connection = mysql.createConnection({
 //   host: "localhost",
 //   user: "we2code",
@@ -30,12 +23,12 @@ var connection = mysql.createConnection({
 //   database: "DocumentDb",
 // });
 
-// const connection = mysql.createConnection({
-//   host: "daigle.iad1-mysql-e2-4b.dreamhost.com",
-//   user: "indiakinursery",
-//   password: "WE2code@2023",
-//   database: "documentdb",
-// });
+const connection = mysql.createConnection({
+    host: "mysql.indiakinursery.com",
+  user: "indiakinursery",
+  password: "WE2code@2023",
+  database: "documentdb",
+});
 
 connection.connect((error) => {
   if (error) throw error;
