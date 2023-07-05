@@ -16,11 +16,11 @@ import "dotenv/config";
 // Username: indiakinursery
 // pwd: WE2code@2023
 console.log();
-const connection = mysql.createConnection({
-  host: "bwoill6ixggdovjdxfzw-mysql.services.clever-cloud.com",
-  user: "ubkxmigstvkzomce",
-  password: "38i6RSJ023zN3RGfbC36",
-  database: "bwoill6ixggdovjdxfzw",
+var connection = mysql.createConnection({
+  host: "mysql.indiakinursery.com",
+  user: "indiakinursery",
+  password: "WE2code@2023",
+  database: "documentdb",
 });
 
 // const connection = mysql.createConnection({
