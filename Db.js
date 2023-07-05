@@ -23,19 +23,19 @@ console.log();
 //   database: "bwoill6ixggdovjdxfzw",
 // });
 
-// const connection = mysql.createConnection({
-//   host: "localhost",
-//   user: "we2code",
-//   password: "we2code",
-//   database: "DocumentDb",
-// });
-
 const connection = mysql.createConnection({
-  host: "daigle.iad1-mysql-e2-4b.dreamhost.com",
-  user: "indiakinursery",
-  password: "WE2code@2023",
-  database: "documentdb",
+  host: "localhost",
+  user: "we2code",
+  password: "we2code",
+  database: "DocumentDb",
 });
+
+// const connection = mysql.createConnection({
+//   host: "daigle.iad1-mysql-e2-4b.dreamhost.com",
+//   user: "indiakinursery",
+//   password: "WE2code@2023",
+//   database: "documentdb",
+// });
 
 connection.connect((error) => {
   if (error) throw error;

@@ -70,7 +70,11 @@ export function client_documents_upload(req, res) {
       document_type +
       '","' +
       document_title +
-      '","http://indiakinursery.com:8888/document_upload/' +
+      '","' +
+      req.protocol +
+      "://" +
+      req.headers.host +
+      "/document_upload/" +
       client_id +
       "-" +
       client_name +
@@ -235,14 +239,23 @@ export async function testingmailer(req, res) {
 
             var clientName = mailResponse[0].name;
 
-            let text =
-              "/home/we2code/Desktop/DMS/dmsBackend/public/document_upload_zipfiles/";
-            let result = text.replace(
-              "/home/we2code/Desktop/DMS/dmsBackend/public",
-              "http://localhost:8888"
-            );
+            // let text =
+            //   "/home/we2code/Desktop/DMS/dmsBackend/public/document_upload_zipfiles/";
+            // let result = text.replace(
+            //   "/home/we2code/Desktop/DMS/dmsBackend/public",
+            //   "" + req.protocol + "://" + req.headers.host + ""
+            // );
+            let result =
+              "" +
+              req.protocol +
+              "://" +
+              req.headers.host +
+              "/document_upload_zipfiles/";
+            console.log("---------path check resulrt------------");
+            console.log(result);
 
             //           // console.log(result);
+            // return false;
             let mailTransporter = nodemailer.createTransport({
               service: "gmail",
               auth: {
