@@ -99,6 +99,7 @@ export function get_documents(req, res) {
   const limit = parseInt(req.query.limit) || 10; // Number of items per page
   const offset = (page - 1) * limit;
   const query = `SELECT * FROM documents LIMIT ${limit} OFFSET ${offset}`;
+  console.log("queryy-" + query);
   connection.query(query, (err, results) => {
     if (err) {
       console.error("Error executing the query: " + err.stack);
@@ -379,6 +380,17 @@ export async function testingmailer(req, res) {
 
 export async function search_document(req, res) {
   const { client_id } = req.query;
+  const page = parseInt(req.query.page); // Current page number
+  const limit = parseInt(req.query.limit); // Number of items per page
+  const offset = (page - 1) * limit;
+
+  // SELECT * FROM `documents`WHERE client_id = '1' AND is_deleted = 0 ORDER BY id DESC LIMIT 3 OFFSET 0
+  var pagination_query;
+  if (limit == 0 && offset == 0) {
+    pagination_query = "";
+  } else {
+    pagination_query = "LIMIT " + limit + " OFFSET " + offset + "";
+  }
   var stringsearch =
     "SELECT * FROM `documents` WHERE client_id='" + client_id + "' AND ";
 
@@ -394,7 +406,7 @@ export async function search_document(req, res) {
         objkey[m] +
         "` LIKE '%" +
         objvalue[m].replace(/[^a-zA-Z0-9 ]/g, "").trim() +
-        "%' AND";
+        "%' AND ";
       all_blank = false;
     } else {
       console.log("null" + m);
@@ -403,17 +415,49 @@ export async function search_document(req, res) {
 
   if (all_blank) {
     stringsearch =
-      "SELECT * FROM `documents` WHERE client_id='" + client_id + "' AND ";
+      "SELECT * FROM `documents`  WHERE client_id='" + client_id + "' AND ";
   }
-  console.log("" + stringsearch + " is_deleted = 0 ORDER BY id DESC");
+  console.log(
+    "" +
+      stringsearch +
+      " is_deleted = 0 ORDER BY id DESC" +
+      pagination_query +
+      ""
+  );
+
   connection.query(
-    "" + stringsearch + " is_deleted = 0 ORDER BY id DESC",
+    "" +
+      stringsearch +
+      " is_deleted = 0 ORDER BY id DESC " +
+      pagination_query +
+      " ",
     (err, rows, fields) => {
       if (err) {
         //console.log("/category_error" + err)
         res.status(502).send(err);
       } else {
-        res.status(200).send(rows);
+        const countQuery =
+          "SELECT COUNT(*) as total_count FROM documents  WHERE client_id='" +
+          client_id +
+          "'AND  is_deleted = 0 ORDER BY id DESC ";
+        connection.query(countQuery, (err, countResult) => {
+          if (err) {
+            console.error("Error executing the count query: " + err.stack);
+            return res.status(500).json({ error: "Internal Server Error" });
+          }
+          const totalRecords = countResult[0].total_count;
+          const totalPages = Math.ceil(totalRecords / limit);
+          const nextPage = page < totalPages ? page + 1 : null;
+          const prevPage = page > 1 ? page - 1 : null;
+          res.json({
+            data: rows,
+            page,
+            totalPages,
+            totalRecords,
+            nextPage,
+            prevPage,
+          });
+        });
       }
     }
   );

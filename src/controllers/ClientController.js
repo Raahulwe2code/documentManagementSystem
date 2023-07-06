@@ -205,6 +205,10 @@ export async function delete_client(req, res) {
 
 export async function search_client(req, res) {
   const { admin_id } = req.query;
+  const page = parseInt(req.query.page); // Current page number
+  const limit = parseInt(req.query.limit); // Number of items per page
+  const offset = (page - 1) * limit;
+  // SELECT * FROM `documents`WHERE client_id = '1' AND is_deleted = 0 ORDER BY id DESC LIMIT 3 OFFSET 0
   var stringsearch =
     "SELECT * FROM `clients` WHERE admin_id='" + admin_id + "' AND ";
 
@@ -231,16 +235,51 @@ export async function search_client(req, res) {
     stringsearch =
       "SELECT * FROM `clients` WHERE admin_id='" + admin_id + "' AND ";
   }
-  console.log("" + stringsearch + " is_deleted = 0 ORDER BY id DESC");
+  console.log(
+    "" +
+      stringsearch +
+      " is_deleted = 0 ORDER BY id DESC LIMIT " +
+      limit +
+      " OFFSET " +
+      offset +
+      ""
+  );
 
   connection.query(
-    "" + stringsearch + " is_deleted = 0 ORDER BY id DESC",
+    "" +
+      stringsearch +
+      " is_deleted = 0 ORDER BY id DESC LIMIT " +
+      limit +
+      " OFFSET " +
+      offset +
+      "",
     (err, rows, fields) => {
       if (err) {
         //console.log("/category_error" + err)
         res.status(502).send(err);
       } else {
-        res.status(200).send(rows);
+        const countQuery =
+          "SELECT COUNT(*) as total_count FROM clients  WHERE admin_id='" +
+          admin_id +
+          "'AND  is_deleted = 0 ORDER BY id DESC ";
+        connection.query(countQuery, (err, countResult) => {
+          if (err) {
+            console.error("Error executing the count query: " + err.stack);
+            return res.status(500).json({ error: "Internal Server Error" });
+          }
+          const totalRecords = countResult[0].total_count;
+          const totalPages = Math.ceil(totalRecords / limit);
+          const nextPage = page < totalPages ? page + 1 : null;
+          const prevPage = page > 1 ? page - 1 : null;
+          res.json({
+            data: rows,
+            page,
+            totalPages,
+            totalRecords,
+            nextPage,
+            prevPage,
+          });
+        });
       }
     }
   );
