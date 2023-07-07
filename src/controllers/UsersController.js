@@ -2,7 +2,7 @@ import { StatusCodes } from "http-status-codes";
 import connection from "../../Db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-
+import nodemailer from "nodemailer";
 const ADMIN_JWT_SECRET_KEY = process.env.ADMIN_JWT_SECRET_KEY;
 
 export async function add_users(req, res) {
@@ -285,4 +285,143 @@ export async function search_user(req, res) {
       }
     }
   );
+}
+
+export function forgot_password(req, res) {
+  // req.protocol +
+  // "://" +
+  // req.headers.host +
+  // console.log("path----" + req.headers.host);
+  var host = req.headers.host;
+  var newOne = host.replace(":8888", ":3006");
+
+  var { email } = req.body;
+  if (email) {
+    connection.query(
+      'SELECT  `id` , `email` FROM `users`  WHERE `email` ="' + email + '"',
+      async (err, results) => {
+        if (err) {
+          console.log(err);
+          res.send(err);
+        } else {
+          if (results != "") {
+            var edata = results[0].email;
+
+            jwt.sign(
+              { id: results[0].id },
+              ADMIN_JWT_SECRET_KEY,
+              function (err, token) {
+                if (err) {
+                  console.log(err);
+                } else {
+                  console.log(
+                    "query--" +
+                      " UPDATE `users` SET `email_token`='" +
+                      token +
+                      "' WHERE id='" +
+                      results[0].id +
+                      "'"
+                  );
+
+                  connection.query(
+                    "UPDATE `users` SET `email_token`='" +
+                      token +
+                      "' WHERE id='" +
+                      results[0].id +
+                      "' ",
+                    (err, rows) => {
+                      if (err) {
+                        console.log(err);
+                        res
+                          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                          .json({ message: "something went wrong" });
+                      }
+                      let mailTransporter = nodemailer.createTransport({
+                        service: "gmail",
+                        auth: {
+                          user: "rahul.verma.we2code@gmail.com",
+                          pass: "sfbmekwihdamgxia",
+                        },
+                      });
+
+                      let mailDetails = {
+                        from: "rahul.verma.we2code@gmail.com",
+                        to: `${edata}`,
+                        subject: "Reset Password Link",
+                        html: `<a href="http://${newOne}/resetpassword?token=${token}"> Reset password Link</a>`,
+                      };
+                      mailTransporter.sendMail(
+                        mailDetails,
+                        function (err, data) {
+                          if (err) {
+                            res.status(200).send({ message: "email not send" });
+                          } else {
+                            res
+                              .status(StatusCodes.OK)
+                              .json({ message: "email send successfully" });
+                          }
+                        }
+                      );
+                    }
+                  );
+                }
+              }
+            );
+          } else {
+            res.send({ resCode: "103", message: "invalid_mail" });
+          }
+        }
+      }
+    );
+  } else {
+    res.send({ resCode: "104", message: "please fill input" });
+  }
+}
+
+export async function reset_password(req, res) {
+  var { password } = req.body;
+  if ("email_token" in req.headers) {
+    if (req.headers.email_token != "" && req.headers.email_token != undefined) {
+      var email_token = req.headers.email_token;
+
+      try {
+        if (password != "") {
+          var admin_data = jwt.verify(email_token, ADMIN_JWT_SECRET_KEY);
+          var aid = admin_data.id;
+          const salt = await bcrypt.genSalt(10);
+          const password_salt = await bcrypt.hash(password, salt);
+
+          connection.query(
+            "UPDATE `users` SET `password`='" +
+              password_salt +
+              "'WHERE id='" +
+              aid +
+              "' ",
+            (err, rows) => {
+              if (err) {
+                console.log(err);
+                res
+                  .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                  .json({ message: "something went wrong" });
+              } else {
+                res
+                  .status(StatusCodes.OK)
+                  .json({ message: "updated password successfully" });
+              }
+            }
+          );
+        } else {
+          res.send({ response: "please fill password" });
+        }
+      } catch (error) {
+        res
+          .status(401)
+          .send({ error: "Please authenticate using a valid token" });
+      }
+    } else {
+      res.send({ response: "Email token not in header" });
+    }
+  } else {
+    res.send({ response: "header error" });
+  }
 }

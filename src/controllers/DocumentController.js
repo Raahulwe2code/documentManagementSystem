@@ -253,20 +253,12 @@ export async function testingmailer(req, res) {
 
             var clientName = mailResponse[0].name;
 
-            // let text =
-            //   "/home/we2code/Desktop/DMS/dmsBackend/public/document_upload_zipfiles/";
-            // let result = text.replace(
-            //   "/home/we2code/Desktop/DMS/dmsBackend/public",
-            //   "" + req.protocol + "://" + req.headers.host + ""
-            // );
             let result =
               "" +
               req.protocol +
               "://" +
               req.headers.host +
               "/document_upload_zipfiles/";
-            console.log("---------path check resulrt------------");
-            console.log(result);
 
             //           // console.log(result);
             // return false;
