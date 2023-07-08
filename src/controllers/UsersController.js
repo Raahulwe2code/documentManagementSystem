@@ -3,13 +3,19 @@ import connection from "../../Db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import path from "path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const ADMIN_JWT_SECRET_KEY = process.env.ADMIN_JWT_SECRET_KEY;
+
+var rendomNumber = Math.floor(100000 + Math.random() * 900000);
 
 export async function add_users(req, res) {
   var { admin_id, type, name, phone_no, is_active, email, password } = req.body;
   const salt = await bcrypt.genSalt(10);
   const password_salt = await bcrypt.hash(password, salt);
-  console.log(password_salt);
 
   connection.query(
     "insert into users(`admin_id`,`type`,`name`,`phone_no`,`is_active`,`email`,`password`) VALUES('" +
@@ -29,7 +35,6 @@ export async function add_users(req, res) {
       "')",
     (err, rows) => {
       if (err) {
-        console.log("error in add user" + err);
         // res
         //   .status(StatusCodes.INTERNAL_SERVER_ERROR)
         //   .json({ message: "something went wrong" });
@@ -99,7 +104,6 @@ export async function admin_login(req, res) {
                 function (err, token) {
                   //console.log(token);
                   if (err) {
-                    console.log(err);
                   }
                   res.send({
                     resCode: "101",
@@ -141,10 +145,10 @@ export async function user_details(req, res) {
 
 export async function update_user(req, res) {
   var { id, type, name, phone_no, is_active, email, password } = req.body;
-  console.log(req.user);
+
   const salt = await bcrypt.genSalt(10);
   const password_salt = await bcrypt.hash(password, salt);
-  console.log(password_salt);
+
   connection.query(
     "UPDATE `users` SET `admin_id`='" +
       req.user +
@@ -165,7 +169,6 @@ export async function update_user(req, res) {
       "' ",
     (err, rows) => {
       if (err) {
-        console.log(err);
         res
           .status(StatusCodes.INTERNAL_SERVER_ERROR)
           .json({ message: "something went wrong" });
@@ -229,7 +232,6 @@ export async function search_user(req, res) {
         "%' AND";
       all_blank = false;
     } else {
-      console.log("null" + m);
     }
   }
 
@@ -237,15 +239,6 @@ export async function search_user(req, res) {
     stringsearch =
       "SELECT * FROM `users` WHERE admin_id='" + admin_id + "' AND ";
   }
-  console.log(
-    "" +
-      stringsearch +
-      " is_deleted = 0 ORDER BY id DESC  LIMIT " +
-      limit +
-      " OFFSET " +
-      offset +
-      ""
-  );
 
   connection.query(
     "" +
@@ -266,7 +259,6 @@ export async function search_user(req, res) {
           "'AND  is_deleted = 0 ORDER BY id DESC  ";
         connection.query(countQuery, (err, countResult) => {
           if (err) {
-            console.error("Error executing the count query: " + err.stack);
             return res.status(500).json({ error: "Internal Server Error" });
           }
           const totalRecords = countResult[0].total_count;
@@ -301,7 +293,6 @@ export function forgot_password(req, res) {
       'SELECT  `id` , `email` FROM `users`  WHERE `email` ="' + email + '"',
       async (err, results) => {
         if (err) {
-          console.log(err);
           res.send(err);
         } else {
           if (results != "") {
@@ -312,17 +303,7 @@ export function forgot_password(req, res) {
               ADMIN_JWT_SECRET_KEY,
               function (err, token) {
                 if (err) {
-                  console.log(err);
                 } else {
-                  console.log(
-                    "query--" +
-                      " UPDATE `users` SET `email_token`='" +
-                      token +
-                      "' WHERE id='" +
-                      results[0].id +
-                      "'"
-                  );
-
                   connection.query(
                     "UPDATE `users` SET `email_token`='" +
                       token +
@@ -331,7 +312,6 @@ export function forgot_password(req, res) {
                       "' ",
                     (err, rows) => {
                       if (err) {
-                        console.log(err);
                         res
                           .status(StatusCodes.INTERNAL_SERVER_ERROR)
                           .json({ message: "something went wrong" });
@@ -399,7 +379,6 @@ export async function reset_password(req, res) {
               "' ",
             (err, rows) => {
               if (err) {
-                console.log(err);
                 res
                   .status(StatusCodes.INTERNAL_SERVER_ERROR)
                   .json({ message: "something went wrong" });
@@ -423,5 +402,99 @@ export async function reset_password(req, res) {
     }
   } else {
     res.send({ response: "header error" });
+  }
+}
+
+// SELECT
+//   (SELECT COUNT(*) FROM users WHERE admin_id = 1 AND is_deleted=0 ) AS employee,
+//   (SELECT COUNT(*) FROM documents WHERE admin_id = 1 AND is_deleted=0 ) AS document,
+//   (SELECT COUNT(*) FROM clients WHERE admin_id = 1 AND is_deleted=0 ) AS clients
+
+export function get_dashboard_details(req, res) {
+  let { admin_id } = req.body;
+
+  connection.query(
+    "SELECT " +
+      "(SELECT COUNT(*) FROM users WHERE admin_id = '" +
+      admin_id +
+      "' AND is_deleted = 0) AS employee, " +
+      "(SELECT COUNT(*) FROM documents WHERE admin_id = '" +
+      admin_id +
+      "' AND is_deleted = 0) AS document, " +
+      "(SELECT COUNT(*) FROM clients WHERE admin_id ='" +
+      admin_id +
+      "'AND is_deleted = 0) AS clients",
+    (err, rows) => {
+      if (err) {
+        res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .json({ message: "something went wrong" });
+      } else {
+        res.status(StatusCodes.OK).json(rows);
+      }
+    }
+  );
+}
+
+export function user_profile_update(req, res) {
+  var { id, name, phone_no, email, profile_picture, profile_picture_type } =
+    req.body;
+
+  if (profile_picture == "") {
+    connection.query(
+      "UPDATE `users` SET `name` = ?, `phone_no` = ?, `email` = ? WHERE id = ?",
+      [name, phone_no, email, id],
+      (err, rows) => {
+        if (err) {
+          res
+            .status(StatusCodes.INTERNAL_SERVER_ERROR)
+            .json({ message: "Something went wrong" });
+        } else {
+          res
+            .status(StatusCodes.OK)
+            .json({ message: "Updated user profile successfully" });
+        }
+      }
+    );
+  } else {
+    const folderName = path.join(__dirname, "../../") + `public/user_profile/`;
+
+    try {
+      var name_str = "" + name + "";
+
+      fs.writeFileSync(
+        folderName + name_str + "." + profile_picture_type + "",
+        profile_picture,
+        "base64"
+      );
+    } catch (err) {}
+
+    connection.query(
+      "UPDATE `users` SET `name` = ?, `phone_no` = ?, `email` = ?, `profile_picture` = ? WHERE id = ?",
+      [
+        name,
+        phone_no,
+        email,
+        req.protocol +
+          "://" +
+          req.headers.host +
+          "/user_profile/" +
+          name_str +
+          "." +
+          profile_picture_type,
+        id,
+      ],
+      (err, rows) => {
+        if (err) {
+          res
+            .status(StatusCodes.INTERNAL_SERVER_ERROR)
+            .json({ message: "Something went wrong" });
+        } else {
+          res
+            .status(StatusCodes.OK)
+            .json({ message: "Updated user profile successfully" });
+        }
+      }
+    );
   }
 }

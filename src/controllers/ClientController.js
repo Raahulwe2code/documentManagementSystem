@@ -2,7 +2,6 @@ import connection from "../../Db.js";
 import { StatusCodes } from "http-status-codes";
 
 export async function add_clients(req, res) {
-  console.log("body" + JSON.stringify(req.body));
   var {
     admin_id,
     type,
@@ -21,7 +20,7 @@ export async function add_clients(req, res) {
       "'",
     (err, rows) => {
       if (err) {
-        console.log(err);
+        // console.log(err);
         // res
         //   .status(StatusCodes.INTERNAL_SERVER_ERROR)
         //   .json({ message: "something went wrong" });
@@ -47,7 +46,6 @@ export async function add_clients(req, res) {
               "') ",
             (err, rows) => {
               if (err) {
-                console.log(err);
                 res
                   .status(StatusCodes.INTERNAL_SERVER_ERROR)
                   .json({ message: "something went wrong" });
@@ -104,7 +102,6 @@ export async function update_client(req, res) {
       "' ",
     (err, rows) => {
       if (err) {
-        console.log(err);
         res
           .status(StatusCodes.INTERNAL_SERVER_ERROR)
           .json({ message: "something went wrong" });
@@ -227,7 +224,6 @@ export async function search_client(req, res) {
         "%' AND";
       all_blank = false;
     } else {
-      console.log("null" + m);
     }
   }
 
@@ -235,15 +231,6 @@ export async function search_client(req, res) {
     stringsearch =
       "SELECT * FROM `clients` WHERE admin_id='" + admin_id + "' AND ";
   }
-  console.log(
-    "" +
-      stringsearch +
-      " is_deleted = 0 ORDER BY id DESC LIMIT " +
-      limit +
-      " OFFSET " +
-      offset +
-      ""
-  );
 
   connection.query(
     "" +
@@ -264,7 +251,6 @@ export async function search_client(req, res) {
           "'AND  is_deleted = 0 ORDER BY id DESC ";
         connection.query(countQuery, (err, countResult) => {
           if (err) {
-            console.error("Error executing the count query: " + err.stack);
             return res.status(500).json({ error: "Internal Server Error" });
           }
           const totalRecords = countResult[0].total_count;

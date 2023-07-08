@@ -28,9 +28,7 @@ export function client_documents_upload(req, res) {
     if (!fs.existsSync(folderName)) {
       fs.mkdirSync(folderName);
     }
-  } catch (err) {
-    console.error(err);
-  }
+  } catch (err) {}
 
   if (document_type === "msword") {
     document_type = "doc";
@@ -48,8 +46,6 @@ export function client_documents_upload(req, res) {
   }
 
   try {
-    console.log(folderName);
-
     var name_str = "" + document_title + "" + rendomNumber + "";
 
     fs.writeFileSync(
@@ -57,9 +53,7 @@ export function client_documents_upload(req, res) {
       document_url,
       "base64"
     );
-  } catch (err) {
-    console.log(err);
-  }
+  } catch (err) {}
   // req.protocol + "://" + req.headers.host + "/user_profile/" + req.file.filename;
   connection.query(
     "INSERT INTO `documents`( `admin_id`, `client_id`,`document_type`, `document_title`, `document_url`) VALUES (" +
@@ -99,16 +93,14 @@ export function get_documents(req, res) {
   const limit = parseInt(req.query.limit) || 10; // Number of items per page
   const offset = (page - 1) * limit;
   const query = `SELECT * FROM documents LIMIT ${limit} OFFSET ${offset}`;
-  console.log("queryy-" + query);
+
   connection.query(query, (err, results) => {
     if (err) {
-      console.error("Error executing the query: " + err.stack);
       return res.status(500).json({ error: "Internal Server Error" });
     }
     const countQuery = "SELECT COUNT(*) as total_count FROM documents";
     connection.query(countQuery, (err, countResult) => {
       if (err) {
-        console.error("Error executing the count query: " + err.stack);
         return res.status(500).json({ error: "Internal Server Error" });
       }
       const totalRecords = countResult[0].total_count;
@@ -238,64 +230,106 @@ export async function delete_document(req, res) {
   }
 }
 
+// export async function testingmailer(req, res) {
+//   var { email } = req.body;
+
+//   if (email != "") {
+//     connection.query(
+//       "SELECT * FROM clients WHERE `email`='" + email + " '  ",
+//       (err, rows, fields) => {
+//         if (err) {
+//           console.log(err);
+//         } else {
+//           if (rows != "") {
+//             var mailResponse = JSON.parse(JSON.stringify(rows));
+
+//             var clientName = mailResponse[0].name;
+
+//             let result =
+//               "" +
+//               req.protocol +
+//               "://" +
+//               req.headers.host +
+//               "/document_upload_zipfiles/";
+
+//             //           // console.log(result);
+//             // return false;
+//             let mailTransporter = nodemailer.createTransport({
+//               service: "gmail",
+//               auth: {
+//                 user: "rahul.verma.we2code@gmail.com",
+//                 pass: "sfbmekwihdamgxia",
+//               },
+//             });
+//             let mailDetails = {
+//               from: "rahul.verma.we2code@gmail.com",
+//               to: `${email}`,
+//               subject: "Test mail",
+//               text: "Node.js testing mail",
+//               attachments: [
+//                 {
+//                   filename: `${clientName}.zip`,
+//                   path: `${result}/${clientName}.zip`,
+//                 },
+//               ],
+//             };
+//             mailTransporter.sendMail(mailDetails, function (err, data) {
+//               if (err) {
+//                 res.status(200).send({ message: "email not send" });
+//               } else {
+//                 res
+//                   .status(StatusCodes.OK)
+//                   .json({ message: "email send successfully" });
+//               }
+//             });
+//           } else {
+//             res.status(200).send({ message: "somthing went wrong" });
+//           }
+//         }
+//       }
+//     );
+//   } else {
+//     res.status(200).send({ message: "please fill Email" });
+//   }
+// }
+
 export async function testingmailer(req, res) {
-  var { email } = req.body;
+  var { email, client_name } = req.body;
 
   if (email != "") {
-    connection.query(
-      "SELECT * FROM clients WHERE `email`='" + email + " '  ",
-      (err, rows, fields) => {
-        if (err) {
-          console.log(err);
-        } else {
-          if (rows != "") {
-            var mailResponse = JSON.parse(JSON.stringify(rows));
+    let result =
+      "" +
+      req.protocol +
+      "://" +
+      req.headers.host +
+      "/document_upload_zipfiles/";
 
-            var clientName = mailResponse[0].name;
-
-            let result =
-              "" +
-              req.protocol +
-              "://" +
-              req.headers.host +
-              "/document_upload_zipfiles/";
-
-            //           // console.log(result);
-            // return false;
-            let mailTransporter = nodemailer.createTransport({
-              service: "gmail",
-              auth: {
-                user: "rahul.verma.we2code@gmail.com",
-                pass: "sfbmekwihdamgxia",
-              },
-            });
-            let mailDetails = {
-              from: "rahul.verma.we2code@gmail.com",
-              to: `${email}`,
-              subject: "Test mail",
-              text: "Node.js testing mail",
-              attachments: [
-                {
-                  filename: `${clientName}.zip`,
-                  path: `${result}/${clientName}.zip`,
-                },
-              ],
-            };
-            mailTransporter.sendMail(mailDetails, function (err, data) {
-              if (err) {
-                res.status(200).send({ message: "email not send" });
-              } else {
-                res
-                  .status(StatusCodes.OK)
-                  .json({ message: "email send successfully" });
-              }
-            });
-          } else {
-            res.status(200).send({ message: "somthing went wrong" });
-          }
-        }
+    let mailTransporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "rahul.verma.we2code@gmail.com",
+        pass: "sfbmekwihdamgxia",
+      },
+    });
+    let mailDetails = {
+      from: "rahul.verma.we2code@gmail.com",
+      to: `${email}`,
+      subject: "Test mail",
+      text: "Node.js testing mail",
+      attachments: [
+        {
+          filename: `${client_name}.zip`,
+          path: `${result}/${client_name}.zip`,
+        },
+      ],
+    };
+    mailTransporter.sendMail(mailDetails, function (err, data) {
+      if (err) {
+        res.status(200).send({ message: "email not send" });
+      } else {
+        res.status(StatusCodes.OK).json({ message: "email send successfully" });
       }
-    );
+    });
   } else {
     res.status(200).send({ message: "please fill Email" });
   }
@@ -401,7 +435,6 @@ export async function search_document(req, res) {
         "%' AND ";
       all_blank = false;
     } else {
-      console.log("null" + m);
     }
   }
 
@@ -409,13 +442,6 @@ export async function search_document(req, res) {
     stringsearch =
       "SELECT * FROM `documents`  WHERE client_id='" + client_id + "' AND ";
   }
-  console.log(
-    "" +
-      stringsearch +
-      " is_deleted = 0 ORDER BY id DESC" +
-      pagination_query +
-      ""
-  );
 
   connection.query(
     "" +
@@ -434,7 +460,6 @@ export async function search_document(req, res) {
           "'AND  is_deleted = 0 ORDER BY id DESC ";
         connection.query(countQuery, (err, countResult) => {
           if (err) {
-            console.error("Error executing the count query: " + err.stack);
             return res.status(500).json({ error: "Internal Server Error" });
           }
           const totalRecords = countResult[0].total_count;
