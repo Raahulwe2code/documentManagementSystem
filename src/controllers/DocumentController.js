@@ -479,3 +479,171 @@ export async function search_document(req, res) {
     }
   );
 }
+
+//document upload from another user
+
+export function document_upload_another_user(req, res) {
+  var { document_title, document_url, document_type, uploaded_by } = req.body;
+
+  if ("client_token" in req.headers) {
+    if (
+      req.headers.client_token != "" &&
+      req.headers.client_token != undefined
+    ) {
+      var client_token = req.headers.client_token;
+
+      try {
+        if (document_title != "") {
+          connection.query(
+            "select * from clients where client_token='" +
+              client_token +
+              "' AND is_deleted='0'",
+            (err, rows) => {
+              if (err) {
+                res
+                  .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                  .json({ message: "something went wrong" });
+              } else {
+                var admin_id = rows[0].admin_id;
+                var client_id = rows[0].id;
+                var client_name = rows[0].name;
+
+                const folderName =
+                  path.join(__dirname, "../../") +
+                  `public/document_upload/${client_id}-${client_name}/`;
+
+                try {
+                  if (!fs.existsSync(folderName)) {
+                    fs.mkdirSync(folderName);
+                  }
+                } catch (err) {}
+
+                if (document_type === "msword") {
+                  document_type = "doc";
+                } else if (
+                  document_type ===
+                  "vnd.openxmlformats-officedocument.wordprocessingml.document"
+                ) {
+                  document_type = "docx";
+                } else if (document_type === "vnd.ms-excel") {
+                  document_type = "xls";
+                } else if (
+                  document_type ===
+                  "vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ) {
+                  document_type = "xlsx";
+                }
+
+                try {
+                  var name_str = "" + document_title + "" + rendomNumber + "";
+
+                  fs.writeFileSync(
+                    folderName + name_str + "." + document_type + "",
+                    document_url,
+                    "base64"
+                  );
+                } catch (err) {}
+                // req.protocol + "://" + req.headers.host + "/user_profile/" + req.file.filename;
+                connection.query(
+                  "INSERT INTO `documents`( `admin_id`, `client_id`,`document_type`,`uploaded_by`, `document_title`, `document_url`) VALUES (" +
+                    admin_id +
+                    ',"' +
+                    client_id +
+                    '","' +
+                    document_type +
+                    '","' +
+                    uploaded_by +
+                    '","' +
+                    document_title +
+                    '","' +
+                    req.protocol +
+                    "://" +
+                    req.headers.host +
+                    "/document_upload/" +
+                    client_id +
+                    "-" +
+                    client_name +
+                    "/" +
+                    name_str +
+                    "." +
+                    document_type +
+                    '")',
+                  (err, rows, fields) => {
+                    if (err) {
+                      //console.log(err)
+                      res.status(200).send(err);
+                    } else {
+                      res
+                        .status(200)
+                        .send({ message: "Document upload successfully" });
+                    }
+                  }
+                );
+              }
+            }
+          );
+        } else {
+          res.send({ response: "please fill Document name" });
+        }
+      } catch (error) {
+        res
+          .status(401)
+          .send({ error: "Please authenticate using a valid token" });
+      }
+    } else {
+      res.send({ response: "Client token not in header" });
+    }
+  } else {
+    res.send({ response: "header error" });
+  }
+}
+
+export function get_document__another_user(req, res) {
+  if ("client_token" in req.headers) {
+    if (
+      req.headers.client_token != "" &&
+      req.headers.client_token != undefined
+    ) {
+      var client_token = req.headers.client_token;
+
+      try {
+        connection.query(
+          "select * from clients where client_token='" +
+            client_token +
+            "' AND is_deleted='0'",
+          (err, rows) => {
+            if (err) {
+              res
+                .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                .json({ message: "something went wrong" });
+            } else {
+              var client_id = rows[0].id;
+              connection.query(
+                "SELECT * FROM documents WHERE `client_id`=" +
+                  client_id +
+                  " AND uploaded_by='another_user' ",
+                (err, rows, fields) => {
+                  if (err) {
+                    //console.log(err)
+                    res.status(200).send(err);
+                  } else {
+                    //console.log("rows")
+                    res.status(200).send(rows);
+                  }
+                }
+              );
+            }
+          }
+        );
+      } catch (error) {
+        res
+          .status(401)
+          .send({ error: "Please authenticate using a valid token" });
+      }
+    } else {
+      res.send({ response: "Client token not in header" });
+    }
+  } else {
+    res.send({ response: "header error" });
+  }
+}

@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ADMIN_JWT_SECRET_KEY = process.env.ADMIN_JWT_SECRET_KEY;
 
-var rendomNumber = Math.floor(100000 + Math.random() * 900000);
+// var rendomNumber = Math.floor(100000 + Math.random() * 900000);
 
 export async function add_users(req, res) {
   var { admin_id, type, name, phone_no, is_active, email, password } = req.body;
@@ -84,7 +84,7 @@ export async function admin_login(req, res) {
     connection.query(
       'SELECT `id`,`admin_id`,`type`,`name`, `email` , `password` FROM `users`  WHERE `email` ="' +
         email +
-        '"',
+        '" AND is_active="1" AND is_deleted="0" ',
       async (err, results) => {
         if (err) {
           //console.log(err)
@@ -497,4 +497,287 @@ export function user_profile_update(req, res) {
       }
     );
   }
+}
+
+//super admin:-   Employeee , admin api controller here -----------------------------------------------
+export async function get_all_admin(req, res) {
+  // const { admin_id } = req.query;
+
+  const page = parseInt(req.query.page); // Current page number
+  const limit = parseInt(req.query.limit); // Number of items per page
+  const offset = (page - 1) * limit;
+  var stringsearch = "SELECT * FROM `users` WHERE type='admin' AND ";
+
+  var all_blank = true;
+  var catobj = req.body;
+  var objvalue = Object.values(catobj);
+  var objkey = Object.keys(catobj);
+
+  for (let m = 0; m < objkey.length; m++) {
+    if (objvalue[m] != "") {
+      stringsearch +=
+        " `" +
+        objkey[m] +
+        "` LIKE '%" +
+        objvalue[m].replace(/[^a-zA-Z0-9 ]/g, "").trim() +
+        "%' AND";
+      all_blank = false;
+    } else {
+    }
+  }
+
+  if (all_blank) {
+    stringsearch = "SELECT * FROM `users`  WHERE type='admin' AND ";
+  }
+
+  connection.query(
+    "" +
+      stringsearch +
+      " is_deleted = 0 ORDER BY id DESC  LIMIT " +
+      limit +
+      " OFFSET " +
+      offset +
+      "",
+    (err, rows, fields) => {
+      if (err) {
+        //console.log("/category_error" + err)
+        res.status(502).send(err);
+      } else {
+        const countQuery =
+          "SELECT COUNT(*) as total_count FROM users WHERE type='admin' AND  is_deleted = 0 ORDER BY id DESC  ";
+        connection.query(countQuery, (err, countResult) => {
+          if (err) {
+            return res.status(500).json({ error: "Internal Server Error" });
+          }
+          const totalRecords = countResult[0].total_count;
+          const totalPages = Math.ceil(totalRecords / limit);
+          const nextPage = page < totalPages ? page + 1 : null;
+          const prevPage = page > 1 ? page - 1 : null;
+          res.json({
+            data: rows,
+            page,
+            totalPages,
+            totalRecords,
+            nextPage,
+            prevPage,
+          });
+        });
+      }
+    }
+  );
+}
+
+export async function get_all_employee(req, res) {
+  const { admin_id } = req.query;
+
+  const page = parseInt(req.query.page); // Current page number
+  const limit = parseInt(req.query.limit); // Number of items per page
+  const offset = (page - 1) * limit;
+  var stringsearch =
+    "SELECT * FROM `users` WHERE admin_id='" +
+    admin_id +
+    "' AND type='employee' AND ";
+
+  var all_blank = true;
+  var catobj = req.body;
+  var objvalue = Object.values(catobj);
+  var objkey = Object.keys(catobj);
+
+  for (let m = 0; m < objkey.length; m++) {
+    if (objvalue[m] != "") {
+      stringsearch +=
+        " `" +
+        objkey[m] +
+        "` LIKE '%" +
+        objvalue[m].replace(/[^a-zA-Z0-9 ]/g, "").trim() +
+        "%' AND";
+      all_blank = false;
+    } else {
+    }
+  }
+
+  if (all_blank) {
+    stringsearch =
+      "SELECT * FROM `users`  WHERE admin_id='" +
+      admin_id +
+      "' AND type='employee' AND ";
+  }
+
+  connection.query(
+    "" +
+      stringsearch +
+      " is_deleted = 0 ORDER BY id DESC  LIMIT " +
+      limit +
+      " OFFSET " +
+      offset +
+      "",
+    (err, rows, fields) => {
+      if (err) {
+        //console.log("/category_error" + err)
+        res.status(502).send(err);
+      } else {
+        const countQuery =
+          "SELECT COUNT(*) as total_count FROM users WHERE admin_id='" +
+          admin_id +
+          "' AND type='employee' AND  is_deleted = 0 ORDER BY id DESC  ";
+        connection.query(countQuery, (err, countResult) => {
+          if (err) {
+            return res.status(500).json({ error: "Internal Server Error" });
+          }
+          const totalRecords = countResult[0].total_count;
+          const totalPages = Math.ceil(totalRecords / limit);
+          const nextPage = page < totalPages ? page + 1 : null;
+          const prevPage = page > 1 ? page - 1 : null;
+          res.json({
+            data: rows,
+            page,
+            totalPages,
+            totalRecords,
+            nextPage,
+            prevPage,
+          });
+        });
+      }
+    }
+  );
+}
+
+export function get_superAdmin_dashboard_details(req, res) {
+  // let { admin_id } = req.body;
+
+  connection.query(
+    "SELECT " +
+      "(SELECT COUNT(*) FROM users WHERE type = 'admin' AND is_deleted = 0) AS admin," +
+      "(SELECT COUNT(*) FROM users WHERE type = 'employee' AND is_deleted = 0) AS employee," +
+      "(SELECT COUNT(*) FROM documents WHERE  is_deleted = 0) AS document, " +
+      "(SELECT COUNT(*) FROM clients WHERE  is_deleted = 0) AS clients",
+    (err, rows) => {
+      if (err) {
+        res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .json({ message: "something went wrong" });
+      } else {
+        res.status(StatusCodes.OK).json(rows);
+      }
+    }
+  );
+}
+
+export async function update_admin(req, res) {
+  var { id, type, name, phone_no, is_active, email, password } = req.body;
+
+  const salt = await bcrypt.genSalt(10);
+  const password_salt = await bcrypt.hash(password, salt);
+
+  connection.query(
+    "UPDATE `users` SET `admin_id`='0',`type`='" +
+      type +
+      "',`name`='" +
+      name +
+      "',`phone_no`='" +
+      phone_no +
+      "',`email`='" +
+      email +
+      "',`password`='" +
+      password_salt +
+      "',`is_active`='" +
+      is_active +
+      "' WHERE id='" +
+      id +
+      "' ",
+    (err, rows) => {
+      if (err) {
+        res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .json({ message: "something went wrong" });
+      } else {
+        res
+          .status(StatusCodes.OK)
+          .json({ message: "updated user successfully" });
+      }
+    }
+  );
+}
+
+export async function add_employee(req, res) {
+  const { admin_id } = req.query;
+  var { type, name, phone_no, is_active, email, password } = req.body;
+  const salt = await bcrypt.genSalt(10);
+  const password_salt = await bcrypt.hash(password, salt);
+
+  connection.query(
+    "insert into users(`admin_id`,`type`,`name`,`phone_no`,`is_active`,`email`,`password`) VALUES('" +
+      admin_id +
+      "','" +
+      type +
+      "','" +
+      name +
+      "','" +
+      phone_no +
+      "','" +
+      is_active +
+      "','" +
+      email +
+      "','" +
+      password_salt +
+      "')",
+    (err, rows) => {
+      if (err) {
+        // res
+        //   .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        //   .json({ message: "something went wrong" });
+
+        if (err.code == "ER_DUP_ENTRY") {
+          res.status(200).send({
+            response:
+              "email already exist, check your mail or try after sometime",
+            success: false,
+          });
+        } else {
+          res.status(200).send({ response: "error", success: false });
+        }
+      } else {
+        res.status(StatusCodes.OK).json({ message: "user added successfully" });
+      }
+    }
+  );
+}
+
+export async function update_employee(req, res) {
+  const { admin_id } = req.query;
+  var { id, type, name, phone_no, is_active, email, password } = req.body;
+
+  const salt = await bcrypt.genSalt(10);
+  const password_salt = await bcrypt.hash(password, salt);
+
+  connection.query(
+    "UPDATE `users` SET `admin_id`='" +
+      admin_id +
+      "',`type`='" +
+      type +
+      "',`name`='" +
+      name +
+      "',`phone_no`='" +
+      phone_no +
+      "',`email`='" +
+      email +
+      "',`password`='" +
+      password_salt +
+      "',`is_active`='" +
+      is_active +
+      "' WHERE id='" +
+      id +
+      "' ",
+    (err, rows) => {
+      if (err) {
+        res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .json({ message: "something went wrong" });
+      } else {
+        res
+          .status(StatusCodes.OK)
+          .json({ message: "updated user successfully" });
+      }
+    }
+  );
 }

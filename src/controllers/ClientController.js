@@ -1,7 +1,85 @@
 import connection from "../../Db.js";
 import { StatusCodes } from "http-status-codes";
 
+// export async function add_clients(req, res) {
+//   var {
+//     admin_id,
+//     type,
+//     name,
+//     email,
+//     phone_no,
+//     address,
+//     company_name,
+//     company_address,
+//   } = req.body;
+//   connection.query(
+//     "SELECT * FROM `clients` WHERE `admin_id`='" +
+//       admin_id +
+//       "' AND `email`='" +
+//       email +
+//       "'",
+//     (err, rows) => {
+//       if (err) {
+//         // console.log(err);
+//         // res
+//         //   .status(StatusCodes.INTERNAL_SERVER_ERROR)
+//         //   .json({ message: "something went wrong" });
+//       } else {
+//         if (rows == "") {
+//           connection.query(
+//             "insert into clients ( `admin_id`,`type`, `name`, `email`,`phone_no`,`address`,`company_name`,`company_address`) VALUES('" +
+//               admin_id +
+//               "','" +
+//               type +
+//               "', '" +
+//               name +
+//               "', '" +
+//               email +
+//               "','" +
+//               phone_no +
+//               "', '" +
+//               address +
+//               "', '" +
+//               company_name +
+//               "', '" +
+//               company_address +
+//               "') ",
+//             (err, rows) => {
+//               if (err) {
+//                 res
+//                   .status(StatusCodes.INTERNAL_SERVER_ERROR)
+//                   .json({ message: "something went wrong" });
+//               } else {
+//                 res
+//                   .status(StatusCodes.OK)
+//                   .json({ message: "Client added successfully" });
+//               }
+//             }
+//           );
+//         } else {
+//           res
+//             .status(StatusCodes.OK)
+//             .json({ message: "already added by this admin" });
+//         }
+//         // res.status(StatusCodes.OK).json({ message: rows });
+//       }
+//     }
+//   );
+// }
+
 export async function add_clients(req, res) {
+  let generated_token = "";
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const charactersLength = characters.length;
+  let counter = 0;
+  while (counter < 70) {
+    generated_token += characters.charAt(
+      Math.floor(Math.random() * charactersLength)
+    );
+    counter += 1;
+  }
+
   var {
     admin_id,
     type,
@@ -27,7 +105,7 @@ export async function add_clients(req, res) {
       } else {
         if (rows == "") {
           connection.query(
-            "insert into clients ( `admin_id`,`type`, `name`, `email`,`phone_no`,`address`,`company_name`,`company_address`) VALUES('" +
+            "insert into clients ( `admin_id`,`type`, `name`, `email`,`client_token`,`phone_no`,`address`,`company_name`,`company_address`) VALUES('" +
               admin_id +
               "','" +
               type +
@@ -35,6 +113,8 @@ export async function add_clients(req, res) {
               name +
               "', '" +
               email +
+              "','" +
+              generated_token +
               "','" +
               phone_no +
               "', '" +
@@ -48,7 +128,7 @@ export async function add_clients(req, res) {
               if (err) {
                 res
                   .status(StatusCodes.INTERNAL_SERVER_ERROR)
-                  .json({ message: "something went wrong" });
+                  .json({ message: err });
               } else {
                 res
                   .status(StatusCodes.OK)
@@ -80,6 +160,18 @@ export async function update_client(req, res) {
     company_address,
   } = req.body;
 
+  let generated_token = "";
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const charactersLength = characters.length;
+  let counter = 0;
+  while (counter < 70) {
+    generated_token += characters.charAt(
+      Math.floor(Math.random() * charactersLength)
+    );
+    counter += 1;
+  }
+
   connection.query(
     "UPDATE `clients` SET `admin_id`='" +
       admin_id +
@@ -91,6 +183,8 @@ export async function update_client(req, res) {
       phone_no +
       "',`email`='" +
       email +
+      "',`client_token`='" +
+      generated_token +
       "',`address`='" +
       address +
       "',`company_name`='" +
@@ -102,9 +196,7 @@ export async function update_client(req, res) {
       "' ",
     (err, rows) => {
       if (err) {
-        res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
-          .json({ message: "something went wrong" });
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: err });
       } else {
         res
           .status(StatusCodes.OK)
