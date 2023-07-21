@@ -314,8 +314,8 @@ export async function testingmailer(req, res) {
     let mailDetails = {
       from: "rahul.verma.we2code@gmail.com",
       to: `${email}`,
-      subject: "Test mail",
-      text: "Node.js testing mail",
+      subject: "Documents",
+      html: `<p>Hello,</p> <p>Here is the documents of ${client_name}</p> <p>Please find the attachments</p>`,
       attachments: [
         {
           filename: `${client_name}.zip`,
