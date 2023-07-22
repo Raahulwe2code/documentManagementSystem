@@ -4,6 +4,7 @@ import {
   add_employee,
   add_users,
   admin_login,
+  Admin_password_change,
   delete_user,
   forgot_password,
   get_all_admin,
@@ -36,7 +37,7 @@ usersRouter.post("/getUserById", user_details);
 usersRouter.put("/update_user", fetchuser, update_user);
 usersRouter.put("/user_profile_update", user_profile_update);
 usersRouter.put("/delete_user", delete_user);
-
+usersRouter.put("/admin_password_change", Admin_password_change);
 //  super admin router define here-------------------------------------------------
 usersRouter.post("/get_all_admin", get_all_admin);
 usersRouter.post("/get_all_employee", get_all_employee);

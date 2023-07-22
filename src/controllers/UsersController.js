@@ -781,3 +781,65 @@ export async function update_employee(req, res) {
     }
   );
 }
+
+export async function Admin_password_change(req, res) {
+  var { id, oldPassword, NewPassword } = req.body;
+
+  if (oldPassword && NewPassword) {
+    connection.query(
+      'SELECT `id`,`admin_id`, `password` FROM `users`  WHERE `id` ="' +
+        id +
+        '"  ',
+      async (err, results) => {
+        if (err) {
+          //console.log(err)
+          res.send(err);
+        } else {
+          if (results != "") {
+            //__________bcrypt_____________________________________
+
+            var db_psw = JSON.parse(JSON.stringify(results[0].password));
+            // //console.log(typeof psw)
+            const validPassword = await bcrypt.compare(oldPassword, db_psw);
+
+            if (validPassword) {
+              if (oldPassword == NewPassword) {
+                res.send({
+                  resCode: "102",
+                  message: "Old and new password is same",
+                });
+              } else {
+                const salt = await bcrypt.genSalt(10);
+                const password_salt = await bcrypt.hash(NewPassword, salt);
+                connection.query(
+                  "UPDATE `users` SET `password`='" +
+                    password_salt +
+                    "'WHERE id='" +
+                    id +
+                    "' ",
+                  (err, rows) => {
+                    if (err) {
+                      res
+                        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                        .json({ message: "something went wrong" });
+                    } else {
+                      res
+                        .status(StatusCodes.OK)
+                        .json({ message: "updated password successfully" });
+                    }
+                  }
+                );
+              }
+            } else {
+              res.send({ resCode: "102", message: "incorrect old password" });
+            }
+          } else {
+            res.send({ resCode: "103", message: "Something went wrong" });
+          }
+        }
+      }
+    );
+  } else {
+    res.send({ resCode: "104", message: "please fill input" });
+  }
+}
