@@ -8,8 +8,6 @@ import { StatusCodes } from "http-status-codes";
 
 import nodemailer from "nodemailer";
 
-var rendomNumber = Math.floor(100000 + Math.random() * 900000);
-
 export function client_documents_upload(req, res) {
   var {
     admin_id,
@@ -46,6 +44,7 @@ export function client_documents_upload(req, res) {
   }
 
   try {
+    var rendomNumber = Math.floor(100000 + Math.random() * 900000);
     var name_str = "" + document_title + "" + rendomNumber + "";
 
     fs.writeFileSync(
@@ -535,6 +534,9 @@ export function document_upload_another_user(req, res) {
                 }
 
                 try {
+                  var rendomNumber = Math.floor(
+                    100000 + Math.random() * 900000
+                  );
                   var name_str = "" + document_title + "" + rendomNumber + "";
 
                   fs.writeFileSync(
