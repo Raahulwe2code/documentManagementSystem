@@ -28,7 +28,7 @@ const connection = mysql.createConnection({
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
 });
-// /home/we2code/Desktop/DMS/dmsFrontend/build
+
 connection.connect((error) => {
   if (error) throw error;
   console.log("Successfully connected to the database.");

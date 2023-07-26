@@ -49,7 +49,37 @@ export async function add_users(req, res) {
           res.status(200).send({ response: "error", success: false });
         }
       } else {
-        res.status(StatusCodes.OK).json({ message: "user added successfully" });
+        if (type == "admin") {
+          let mailTransporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+              user: "rahul.verma.we2code@gmail.com",
+              pass: "sfbmekwihdamgxia",
+            },
+          });
+
+          let mailDetails = {
+            from: "rahul.verma.we2code@gmail.com",
+            to: `${email}`,
+            subject: "Wellcome message for admin",
+            html: `<h4>Welcome, ${name}! </h4>
+            <p>Welcome on board, Admin! 🌟 We're excited to have you join our team. Your expertise and leadership will undoubtedly make a significant impact. Let's achieve great things together!</p>`,
+          };
+          mailTransporter.sendMail(mailDetails, function (err, data) {
+            if (err) {
+              res.status(200).send({ message: "email not send" });
+            } else {
+              res.status(StatusCodes.OK).json({
+                IsmailSend: "email send successfully",
+                message: "user added successfully",
+              });
+            }
+          });
+        } else {
+          res
+            .status(StatusCodes.OK)
+            .json({ message: "user added successfully" });
+        }
       }
     }
   );
